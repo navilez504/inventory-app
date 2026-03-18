@@ -38,14 +38,16 @@ const defaultForm: AssetForm = {
   precio: "",
   fecha_adquisicion: "",
   proveedor_id: "",
-  estado: "ACTIVO",
+  estado: "AVAILABLE",
   observaciones: "",
 };
 
 const STATUS_OPTIONS = [
-  { value: "ACTIVO", label: "Active" },
-  { value: "ASIGNADO", label: "Assigned" },
-  { value: "DADO_DE_BAJA", label: "Written off" },
+  { value: "AVAILABLE", label: "Available" },
+  { value: "IN_WAREHOUSE", label: "In warehouse" },
+  { value: "ASSIGNED", label: "Assigned" },
+  { value: "DAMAGED", label: "Damaged" },
+  { value: "OBSOLETE", label: "Obsolete" },
 ];
 
 const AssetFormPage: React.FC = () => {
@@ -56,6 +58,7 @@ const AssetFormPage: React.FC = () => {
   const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
   const [marcas, setMarcas] = useState<{ id: number; nombre: string }[]>([]);
   const [proveedores, setProveedores] = useState<{ id: number; nombre: string }[]>([]);
+  const [returning, setReturning] = useState(false);
 
   useEffect(() => {
     api.get("/master-data/categorias").then((res) => setCategorias(res.data));
@@ -76,7 +79,7 @@ const AssetFormPage: React.FC = () => {
           precio: data.precio != null ? String(data.precio) : "",
           fecha_adquisicion: data.fecha_adquisicion ?? "",
           proveedor_id: data.proveedor_id != null ? String(data.proveedor_id) : "",
-          estado: data.estado ?? "ACTIVO",
+          estado: data.estado ?? "AVAILABLE",
           observaciones: data.observaciones ?? "",
         });
       });
@@ -134,6 +137,29 @@ const AssetFormPage: React.FC = () => {
       navigate("/assets");
     } catch (err: any) {
       setErrors((prev) => ({ ...prev, form: String(err?.response?.data?.detail ?? "Error saving asset.") }));
+    }
+  };
+
+  const isAssigned =
+    id &&
+    (form.estado === "ASSIGNED" ||
+      String(form.estado).toUpperCase() === "ASIGNADO");
+
+  const handleReturnAssignment = async () => {
+    if (!id) return;
+    setReturning(true);
+    setErrors((prev) => ({ ...prev, form: undefined }));
+    try {
+      await api.post(`/assignments/return/${id}`);
+      const res = await api.get(`/assets/${id}`);
+      setForm((prev) => ({ ...prev, estado: res.data.estado ?? "AVAILABLE" }));
+    } catch (err: any) {
+      setErrors((prev) => ({
+        ...prev,
+        form: String(err?.response?.data?.detail ?? "Could not return assignment."),
+      }));
+    } finally {
+      setReturning(false);
     }
   };
 
@@ -243,6 +269,24 @@ const AssetFormPage: React.FC = () => {
           <Typography color="error" variant="body2">
             {errors.form}
           </Typography>
+        )}
+        {isAssigned && (
+          <Box sx={{ py: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              This asset is assigned. Return it to free it for reassignment or to set status from inventory.
+            </Typography>
+            <Button
+              variant="outlined"
+              color="warning"
+              disabled={returning}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleReturnAssignment();
+              }}
+            >
+              {returning ? "Returning…" : "Return from assignment"}
+            </Button>
+          </Box>
         )}
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button type="submit" variant="contained">

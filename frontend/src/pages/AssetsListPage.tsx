@@ -22,10 +22,13 @@ interface Asset {
   estado?: string;
 }
 
+const ASSIGNED_STATUSES = new Set(["ASSIGNED", "ASIGNADO"]);
+
 const AssetsListPage: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [categorias, setCategorias] = useState<Record<number, string>>({});
   const [marcas, setMarcas] = useState<Record<number, string>>({});
+  const [msg, setMsg] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -48,11 +51,28 @@ const AssetsListPage: React.FC = () => {
     loadAssets();
   }, [location.key]);
 
+  const handleReturn = async (e: React.MouseEvent, assetId: number) => {
+    e.stopPropagation();
+    setMsg(null);
+    try {
+      await api.post(`/assignments/return/${assetId}`);
+      setMsg("Asset returned from assignment.");
+      await loadAssets();
+    } catch (err: any) {
+      setMsg(String(err?.response?.data?.detail ?? "Return failed."));
+    }
+  };
+
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
         Assets
       </Typography>
+      {msg && (
+        <Typography variant="body2" color={msg.includes("failed") ? "error" : "success.main"} sx={{ mb: 1 }}>
+          {msg}
+        </Typography>
+      )}
       <Button
         variant="contained"
         color="primary"
@@ -70,6 +90,7 @@ const AssetsListPage: React.FC = () => {
             <TableCell>Model</TableCell>
             <TableCell>Serial</TableCell>
             <TableCell>Status</TableCell>
+            <TableCell align="right">Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -86,6 +107,15 @@ const AssetsListPage: React.FC = () => {
               <TableCell>{a.modelo ?? "—"}</TableCell>
               <TableCell>{a.serie ?? "—"}</TableCell>
               <TableCell>{a.estado ?? "—"}</TableCell>
+              <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                {a.estado && ASSIGNED_STATUSES.has(String(a.estado).toUpperCase()) ? (
+                  <Button size="small" color="warning" variant="outlined" onClick={(e) => handleReturn(e, a.id)}>
+                    Return
+                  </Button>
+                ) : (
+                  "—"
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

@@ -7,6 +7,7 @@ from app import models, schemas
 from app.core.security import get_current_active_user, get_current_user_optional, require_permission
 from app.database.database import get_db
 from app.services.audit_service import log_audit
+from app.services.assignment_service import log_inventory_movement
 
 
 router = APIRouter(tags=["movements"])
@@ -119,7 +120,28 @@ def create_movimiento(
             if stock:
                 stock.cantidad -= det_in.cantidad
 
-    db.commit()
+        if movimiento_in.tipo == models.MovimientoTipoEnum.ENTRADA and dest_ubicacion_id:
+            ubi = (
+                db.query(models.Ubicacion)
+                .filter(models.Ubicacion.id == dest_ubicacion_id)
+                .first()
+            )
+            log_inventory_movement(
+                db,
+                asset_id=det_in.bien_id,
+                movement_type=models.InventoryMovementType.ENTRY,
+                created_by_id=user.id,
+                to_warehouse_id=ubi.bodega_id if ubi else None,
+                notes=movimiento_in.observaciones,
+            )
+            if bien.estado == models.AssetStatus.AVAILABLE:
+                bien.estado = models.AssetStatus.IN_WAREHOUSE
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     db.refresh(movimiento)
 
     log_audit(

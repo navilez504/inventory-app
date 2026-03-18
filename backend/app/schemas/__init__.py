@@ -153,7 +153,7 @@ class BienBase(BaseModel):
     precio: float
     fecha_adquisicion: date
     proveedor_id: Optional[int] = None
-    estado: str
+    estado: str = "AVAILABLE"
     observaciones: Optional[str] = None
 
 
@@ -249,6 +249,25 @@ class Auditoria(BaseModel):
         from_attributes = True
 
 
+class AuditoriaEnriched(BaseModel):
+    """Audit row with actor names and a short summary for list views."""
+
+    id: int
+    user_id: int
+    username: str = ""
+    full_name: str = ""
+    table_name: str
+    action: str
+    summary: str
+    old_data: Optional[dict] = None
+    new_data: Optional[dict] = None
+    timestamp: datetime
+    ip_address: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class AsignacionBase(BaseModel):
     bien_id: int
     persona_id: int
@@ -262,6 +281,8 @@ class AsignacionCreate(AsignacionBase):
 class Asignacion(AsignacionBase):
     id: int
     fecha: datetime
+    is_active: bool = True
+    ended_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

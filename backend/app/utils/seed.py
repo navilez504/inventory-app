@@ -48,6 +48,7 @@ DEFAULT_ROLES: dict[str, dict] = {
             "movements:view",
             "movements:create",
             "org:view",
+            "audit:view",
         ],
     },
     "Auditor": {

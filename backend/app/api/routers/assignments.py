@@ -1,23 +1,47 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import and_, or_
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app import models, schemas
-from app.core.security import get_current_active_user, get_current_user_optional, require_permission
+from app.core.security import get_current_user_optional
 from app.database.database import get_db
-from app.services.audit_service import log_audit
+from app.services import assignment_service
 
 
 router = APIRouter(tags=["assignments"])
 
 
-@router.get(
-    "/",
-    response_model=List[schemas.Asignacion],
-)
-def list_assignments(db: Session = Depends(get_db)):
-    return db.query(models.Asignacion).all()
+def _acting_user(db: Session, current_user: models.User | None) -> models.User:
+    if current_user:
+        return current_user
+    u = db.query(models.User).filter(models.User.username == "admin").first()
+    if not u:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return u
+
+
+@router.get("/", response_model=List[schemas.Asignacion])
+def list_assignments(
+    db: Session = Depends(get_db),
+    active_only: bool = True,
+):
+    q = db.query(models.Asignacion)
+    if active_only:
+        q = q.join(models.Bien, models.Asignacion.bien_id == models.Bien.id).filter(
+            or_(
+                models.Asignacion.is_active.is_(True),
+                and_(
+                    models.Asignacion.ended_at.is_(None),
+                    models.Bien.estado.in_(
+                        (models.AssetStatus.ASSIGNED, "ASIGNADO"),
+                    ),
+                ),
+            )
+        )
+    return q.order_by(models.Asignacion.fecha.desc()).all()
 
 
 @router.post(
@@ -31,36 +55,38 @@ def create_assignment(
     current_user: models.User | None = Depends(get_current_user_optional),
     request: Request = None,
 ):
-    bien = db.query(models.Bien).filter(models.Bien.id == asignacion_in.bien_id).first()
-    if not bien:
-        raise HTTPException(status_code=400, detail="Asset not found")
-    persona = (
-        db.query(models.Persona)
-        .filter(models.Persona.id == asignacion_in.persona_id)
-        .first()
+    user = _acting_user(db, current_user)
+    return assignment_service.create_assignment(
+        db,
+        bien_id=asignacion_in.bien_id,
+        persona_id=asignacion_in.persona_id,
+        observaciones=asignacion_in.observaciones,
+        acting_user=user,
+        ip_address=request.client.host if request else None,
     )
-    if not persona:
-        raise HTTPException(status_code=400, detail="Person not found")
 
-    asignacion = models.Asignacion(**asignacion_in.model_dump())
-    db.add(asignacion)
-    bien.estado = models.BienEstadoEnum.ASIGNADO
-    db.commit()
-    db.refresh(asignacion)
 
-    if current_user:
-        log_audit(
-            db,
-            user_id=current_user.id,
-            table_name="asignaciones",
-            action="CREATE",
-            old_data=None,
-            new_data={
-                "id": asignacion.id,
-                "bien_id": asignacion.bien_id,
-                "persona_id": asignacion.persona_id,
+@router.post("/return/{bien_id}")
+def return_assignment(
+    bien_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User | None = Depends(get_current_user_optional),
+    request: Request = None,
+):
+    user = _acting_user(db, current_user)
+    result = assignment_service.return_assignment(
+        db,
+        bien_id=bien_id,
+        acting_user=user,
+        ip_address=request.client.host if request else None,
+    )
+    if result is None:
+        return JSONResponse(
+            status_code=200,
+            content={
+                "ok": True,
+                "synced": True,
+                "message": "Asset had no assignment row; status was updated to match inventory.",
             },
-            ip_address=request.client.host if request else None,
         )
-    return asignacion
-
+    return result

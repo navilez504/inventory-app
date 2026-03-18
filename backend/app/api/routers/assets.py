@@ -1,12 +1,14 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.core.security import get_current_active_user, get_current_user_optional, require_permission
 from app.database.database import get_db
 from app.services.audit_service import log_audit
+from app.services import asset_service
 
 
 router = APIRouter(tags=["assets"])
@@ -16,8 +18,27 @@ router = APIRouter(tags=["assets"])
     "/",
     response_model=List[schemas.Bien],
 )
-def list_assets(db: Session = Depends(get_db)):
-    return db.query(models.Bien).all()
+def list_assets(
+    db: Session = Depends(get_db),
+    assignable_only: bool = Query(False),
+):
+    q = db.query(models.Bien)
+    if assignable_only:
+        sub = (
+            db.query(models.Stock.bien_id)
+            .group_by(models.Stock.bien_id)
+            .having(func.coalesce(func.sum(models.Stock.cantidad), 0) > 0)
+        )
+        ids = [r[0] for r in sub.all()]
+        if not ids:
+            return []
+        q = q.filter(
+            models.Bien.id.in_(ids),
+            models.Bien.estado.in_(
+                [models.AssetStatus.AVAILABLE, models.AssetStatus.IN_WAREHOUSE]
+            ),
+        )
+    return q.all()
 
 
 @router.post(
@@ -31,16 +52,7 @@ def create_asset(
     current_user: models.User | None = Depends(get_current_user_optional),
     request: Request = None,
 ):
-    if (
-        db.query(models.Bien)
-        .filter(models.Bien.numero_inventario == bien_in.numero_inventario)
-        .first()
-    ):
-        raise HTTPException(status_code=400, detail="Inventory number already exists")
-    bien = models.Bien(**bien_in.model_dump())
-    db.add(bien)
-    db.commit()
-    db.refresh(bien)
+    bien = asset_service.create_asset(db, bien_in=bien_in, current_user=current_user)
     if current_user:
         log_audit(
             db,
@@ -80,6 +92,15 @@ def delete_asset(
     bien = db.query(models.Bien).filter(models.Bien.id == bien_id).first()
     if not bien:
         raise HTTPException(status_code=404, detail="Asset not found")
+    if (
+        db.query(models.Asignacion)
+        .filter(models.Asignacion.bien_id == bien_id)
+        .first()
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete asset with assignment or movement history",
+        )
     before = {"id": bien.id, "numero_inventario": bien.numero_inventario}
     db.delete(bien)
     db.commit()
@@ -109,10 +130,7 @@ def update_asset(
     if not bien:
         raise HTTPException(status_code=404, detail="Asset not found")
     before = {"id": bien.id, "numero_inventario": bien.numero_inventario}
-    for field, value in bien_in.model_dump(exclude_unset=True).items():
-        setattr(bien, field, value)
-    db.commit()
-    db.refresh(bien)
+    bien = asset_service.update_asset(db, bien=bien, bien_in=bien_in)
     if current_user:
         log_audit(
             db,

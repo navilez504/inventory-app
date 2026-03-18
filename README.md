@@ -70,7 +70,35 @@ docker compose up --build
 
 - API (behind Nginx): `http://localhost/api`
 - Backend direct: `http://localhost:8000`
-- Frontend: `http://localhost` (via Nginx) or `http://localhost:5173`
+- Frontend (Docker): `http://localhost` (Nginx) or `http://localhost:5173` — **this UI is the last `docker compose build` of the frontend**, not your latest source files.
+
+### Frontend: why UI changes don’t show (Docker)
+
+The **frontend** container serves a **pre-built** `dist/` folder. Editing React code does **nothing** until you rebuild:
+
+```bash
+docker compose build frontend --no-cache && docker compose up -d frontend nginx
+```
+
+**Live-reload UI (recommended while developing):**
+
+```bash
+docker compose --profile dev-ui up -d
+```
+
+Then open **http://localhost:5174** — Vite serves your current `frontend/` source and proxies `/api` to the backend.
+
+**Without Docker (only backend in Docker):**
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Open **http://localhost:5173** (API proxy → `http://127.0.0.1:8000`).
+
+### Reset / clean database
+
+See **[docs/DATABASE_RESET.md](docs/DATABASE_RESET.md)** — wipe schema + migrations, or remove Docker volume.
 
 ### Production notes
 

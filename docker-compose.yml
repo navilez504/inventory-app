@@ -31,6 +31,9 @@ services:
     volumes:
       - ./backend:/app
 
+  # Static UI baked at image build time. After changing React code run:
+  #   docker compose build frontend --no-cache && docker compose up -d frontend nginx
+  # Or use live UI at http://localhost:5174 — docker compose --profile dev-ui up -d
   frontend:
     build: ./frontend
     container_name: inventory_frontend
@@ -38,6 +41,21 @@ services:
       - backend
     ports:
       - "5173:80"
+
+  frontend-dev:
+    profiles: ["dev-ui"]
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - frontend_dev_node_modules:/app/node_modules
+    environment:
+      VITE_API_TARGET: http://backend:8000
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5174:5173"
+    depends_on:
+      - backend
 
   nginx:
     image: nginx:latest
@@ -52,3 +70,4 @@ services:
 
 volumes:
   postgres_data:
+  frontend_dev_node_modules:

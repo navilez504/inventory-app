@@ -172,6 +172,17 @@ class Ubicacion(Base):
     stocks = relationship("Stock", back_populates="ubicacion")
 
 
+class AssetStatus:
+    """Asset lifecycle — enforced in services and DB."""
+
+    AVAILABLE = "AVAILABLE"
+    ASSIGNED = "ASSIGNED"
+    IN_WAREHOUSE = "IN_WAREHOUSE"
+    DAMAGED = "DAMAGED"
+    OBSOLETE = "OBSOLETE"
+
+
+# Legacy enum values mapped in migration to string statuses above
 class BienEstadoEnum(str):
     ACTIVO = "ACTIVO"
     ASIGNADO = "ASIGNADO"
@@ -191,14 +202,10 @@ class Bien(Base):
     fecha_adquisicion = Column(Date, nullable=False, default=date.today)
     proveedor_id = Column(Integer, ForeignKey("proveedores.id"), nullable=True)
     estado = Column(
-        Enum(
-            BienEstadoEnum.ACTIVO,
-            BienEstadoEnum.ASIGNADO,
-            BienEstadoEnum.DADO_DE_BAJA,
-            name="bien_estado_enum",
-        ),
-        default=BienEstadoEnum.ACTIVO,
+        String(32),
+        default=AssetStatus.AVAILABLE,
         nullable=False,
+        index=True,
     )
     observaciones = Column(Text, nullable=True)
 
@@ -268,13 +275,45 @@ class Asignacion(Base):
     __tablename__ = "asignaciones"
 
     id = Column(Integer, primary_key=True, index=True)
-    bien_id = Column(Integer, ForeignKey("bienes.id"), nullable=False)
+    bien_id = Column(Integer, ForeignKey("bienes.id"), nullable=False, index=True)
     persona_id = Column(Integer, ForeignKey("personas.id"), nullable=False)
     fecha = Column(DateTime, default=datetime.utcnow, nullable=False)
     observaciones = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    ended_at = Column(DateTime, nullable=True)
 
     bien = relationship("Bien", back_populates="asignaciones")
     persona = relationship("Persona", back_populates="asignaciones")
+
+
+class InventoryMovementType:
+    ENTRY = "ENTRY"
+    ASSIGNMENT = "ASSIGNMENT"
+    TRANSFER = "TRANSFER"
+    RETURN = "RETURN"
+    DISPOSAL = "DISPOSAL"
+    DAMAGE = "DAMAGE"
+
+
+class InventoryMovement(Base):
+    __tablename__ = "inventory_movements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    asset_id = Column(Integer, ForeignKey("bienes.id"), nullable=False, index=True)
+    movement_type = Column(String(32), nullable=False, index=True)
+    from_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    to_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    from_persona_id = Column(Integer, ForeignKey("personas.id"), nullable=True)
+    to_persona_id = Column(Integer, ForeignKey("personas.id"), nullable=True)
+    from_warehouse_id = Column(Integer, ForeignKey("bodegas.id"), nullable=True)
+    to_warehouse_id = Column(Integer, ForeignKey("bodegas.id"), nullable=True)
+    movement_date = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    reference = Column(String(150), nullable=True)
+    notes = Column(Text, nullable=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    asset = relationship("Bien")
+    created_by = relationship("User", foreign_keys=[created_by_id])
 
 
 class Reasignacion(Base):
