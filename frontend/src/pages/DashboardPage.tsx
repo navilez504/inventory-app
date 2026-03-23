@@ -1,52 +1,59 @@
 import React, { useEffect, useState } from "react";
-import { Grid, Paper, Typography } from "@mui/material";
+import { Alert, Box, Paper, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
+import InventoryAnalytics from "../components/erp/InventoryAnalytics";
+import type { DashboardKPIs } from "../types/dashboard";
 
 const DashboardPage: React.FC = () => {
-  const [assetCount, setAssetCount] = useState<number | null>(null);
-  const [warehouseCount, setWarehouseCount] = useState<number | null>(null);
-  const [movementCount, setMovementCount] = useState<number | null>(null);
+  const { t } = useTranslation();
+  const [data, setData] = useState<DashboardKPIs | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.get("/assets/").then((res) => setAssetCount(res.data.length));
-    api.get("/warehouses/bodegas").then((res) => setWarehouseCount(res.data.length));
-    api.get("/movements/").then((res) => setMovementCount(res.data.length));
-  }, []);
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    api
+      .get<DashboardKPIs>("/reports/dashboard-kpis")
+      .then((res) => {
+        if (!cancelled) setData(res.data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(String(err?.response?.data?.detail ?? err?.message ?? t("dashboard.loadError")));
+          setData(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
-        <Typography variant="h4" gutterBottom>
-          Dashboard
+    <Box>
+      <Paper sx={{ p: 2, mb: 2, background: "linear-gradient(135deg, #1976d208 0%, #fff 50%)" }} elevation={0}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          {t("dashboard.title")}
         </Typography>
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6">Assets</Typography>
-          <Typography variant="h3">
-            {assetCount !== null ? assetCount : "…"}
-          </Typography>
-        </Paper>
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6">Warehouses</Typography>
-          <Typography variant="h3">
-            {warehouseCount !== null ? warehouseCount : "…"}
-          </Typography>
-        </Paper>
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6">Movements (Total)</Typography>
-          <Typography variant="h3">
-            {movementCount !== null ? movementCount : "…"}
-          </Typography>
-        </Paper>
-      </Grid>
-    </Grid>
+        <Typography variant="body1" color="text.secondary">
+          {t("dashboard.subtitle")}
+        </Typography>
+      </Paper>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      <InventoryAnalytics data={data} loading={loading} title={t("dashboard.kpiTitle")} />
+    </Box>
   );
 };
 
 export default DashboardPage;
-

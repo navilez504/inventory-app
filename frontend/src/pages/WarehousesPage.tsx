@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface Bodega {
@@ -27,6 +28,7 @@ interface Ubicacion {
 }
 
 const WarehousesPage: React.FC = () => {
+  const { t } = useTranslation();
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
   const [newBodega, setNewBodega] = useState({ nombre: "", descripcion: "" });
@@ -66,38 +68,38 @@ const WarehousesPage: React.FC = () => {
   return (
     <Grid container spacing={2}>
       <Grid item xs={12}>
-        <Typography variant="h5">Warehouses &amp; Locations</Typography>
+        <Typography variant="h5">{t("warehouses.title")}</Typography>
       </Grid>
 
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Typography variant="h6">New Warehouse</Typography>
+          <Typography variant="h6">{t("warehouses.newWarehouse")}</Typography>
           <Box component="form" onSubmit={handleCreateBodega} sx={{ mt: 1, display: "grid", gap: 2 }}>
             <TextField
-              label="Name"
+              label={t("warehouses.warehouseName")}
               value={newBodega.nombre}
               onChange={(e) => setNewBodega((prev) => ({ ...prev, nombre: e.target.value }))}
               required
             />
             <TextField
-              label="Description"
+              label={t("common.description")}
               value={newBodega.descripcion}
               onChange={(e) => setNewBodega((prev) => ({ ...prev, descripcion: e.target.value }))}
             />
             <Button type="submit" variant="contained">
-              Create Warehouse
+              {t("warehouses.createWarehouse")}
             </Button>
           </Box>
         </Paper>
 
         <Paper sx={{ p: 2 }}>
-          <Typography variant="h6">Warehouses</Typography>
+          <Typography variant="h6">{t("warehouses.list")}</Typography>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Description</TableCell>
+                <TableCell>{t("warehouses.id")}</TableCell>
+                <TableCell>{t("common.name")}</TableCell>
+                <TableCell>{t("common.description")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -115,34 +117,34 @@ const WarehousesPage: React.FC = () => {
 
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Typography variant="h6">New Location</Typography>
+          <Typography variant="h6">{t("warehouses.newLocation")}</Typography>
           <Box component="form" onSubmit={handleCreateUbicacion} sx={{ mt: 1, display: "grid", gap: 2 }}>
             <TextField
-              label="Name"
+              label={t("warehouses.locationName")}
               value={newUbicacion.nombre}
               onChange={(e) => setNewUbicacion((prev) => ({ ...prev, nombre: e.target.value }))}
               required
             />
             <TextField
-              label="Warehouse ID"
+              label={t("warehouses.warehouseId")}
               value={newUbicacion.bodega_id}
               onChange={(e) => setNewUbicacion((prev) => ({ ...prev, bodega_id: e.target.value }))}
               required
             />
             <Button type="submit" variant="contained">
-              Create Location
+              {t("warehouses.createLocation")}
             </Button>
           </Box>
         </Paper>
 
         <Paper sx={{ p: 2 }}>
-          <Typography variant="h6">Locations</Typography>
+          <Typography variant="h6">{t("warehouses.locations")}</Typography>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Warehouse ID</TableCell>
+                <TableCell>{t("warehouses.id")}</TableCell>
+                <TableCell>{t("common.name")}</TableCell>
+                <TableCell>{t("warehouses.warehouseId")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -162,4 +164,3 @@ const WarehousesPage: React.FC = () => {
 };
 
 export default WarehousesPage;
-

@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface AssetForm {
@@ -42,17 +43,12 @@ const defaultForm: AssetForm = {
   observaciones: "",
 };
 
-const STATUS_OPTIONS = [
-  { value: "AVAILABLE", label: "Available" },
-  { value: "IN_WAREHOUSE", label: "In warehouse" },
-  { value: "ASSIGNED", label: "Assigned" },
-  { value: "DAMAGED", label: "Damaged" },
-  { value: "OBSOLETE", label: "Obsolete" },
-];
+const STATUS_VALUES = ["AVAILABLE", "IN_WAREHOUSE", "ASSIGNED", "DAMAGED", "OBSOLETE"] as const;
 
 const AssetFormPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [form, setForm] = useState<AssetForm>(defaultForm);
   const [errors, setErrors] = useState<Partial<Record<AssetFormField | "form", string>>>({});
   const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
@@ -96,12 +92,12 @@ const AssetFormPage: React.FC = () => {
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<AssetFormField | "form", string>> = {};
-    if (!form.numero_inventario.trim()) newErrors.numero_inventario = "Inventory number is required";
-    if (!form.categoria_id.trim()) newErrors.categoria_id = "Please select a category";
-    if (!form.marca_id.trim()) newErrors.marca_id = "Please select a brand";
-    if (!form.precio.trim() || Number(form.precio) <= 0) newErrors.precio = "Price (USD) must be greater than 0";
-    if (!form.fecha_adquisicion.trim()) newErrors.fecha_adquisicion = "Acquisition date is required";
-    if (!form.estado.trim()) newErrors.estado = "Please select a status";
+    if (!form.numero_inventario.trim()) newErrors.numero_inventario = t("assetForm.errors.inventoryRequired");
+    if (!form.categoria_id.trim()) newErrors.categoria_id = t("assetForm.errors.category");
+    if (!form.marca_id.trim()) newErrors.marca_id = t("assetForm.errors.brand");
+    if (!form.precio.trim() || Number(form.precio) <= 0) newErrors.precio = t("assetForm.errors.price");
+    if (!form.fecha_adquisicion.trim()) newErrors.fecha_adquisicion = t("assetForm.errors.date");
+    if (!form.estado.trim()) newErrors.estado = t("assetForm.errors.status");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -136,7 +132,10 @@ const AssetFormPage: React.FC = () => {
       }
       navigate("/assets");
     } catch (err: any) {
-      setErrors((prev) => ({ ...prev, form: String(err?.response?.data?.detail ?? "Error saving asset.") }));
+      setErrors((prev) => ({
+        ...prev,
+        form: String(err?.response?.data?.detail ?? t("assetForm.saveError")),
+      }));
     }
   };
 
@@ -156,7 +155,7 @@ const AssetFormPage: React.FC = () => {
     } catch (err: any) {
       setErrors((prev) => ({
         ...prev,
-        form: String(err?.response?.data?.detail ?? "Could not return assignment."),
+        form: String(err?.response?.data?.detail ?? t("assetForm.returnError")),
       }));
     } finally {
       setReturning(false);
@@ -166,11 +165,11 @@ const AssetFormPage: React.FC = () => {
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
-        {id ? "Edit Asset" : "New Asset"}
+        {id ? t("assetForm.editTitle") : t("assetForm.newTitle")}
       </Typography>
       <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gap: 2, maxWidth: 480 }}>
         <TextField
-          label="Inventory number"
+          label={t("assetForm.inventoryNumber")}
           value={form.numero_inventario}
           onChange={handleChange("numero_inventario")}
           required
@@ -178,13 +177,13 @@ const AssetFormPage: React.FC = () => {
           helperText={errors.numero_inventario}
         />
         <FormControl required error={!!errors.categoria_id}>
-          <InputLabel>Category</InputLabel>
+          <InputLabel>{t("assetForm.category")}</InputLabel>
           <Select
             value={form.categoria_id}
-            label="Category"
+            label={t("assetForm.category")}
             onChange={handleChange("categoria_id")}
           >
-            <MenuItem value="">Select category</MenuItem>
+            <MenuItem value="">{t("assetForm.selectCategory")}</MenuItem>
             {categorias.map((c) => (
               <MenuItem key={c.id} value={String(c.id)}>
                 {c.nombre}
@@ -198,9 +197,9 @@ const AssetFormPage: React.FC = () => {
           )}
         </FormControl>
         <FormControl required error={!!errors.marca_id}>
-          <InputLabel>Brand</InputLabel>
-          <Select value={form.marca_id} label="Brand" onChange={handleChange("marca_id")}>
-            <MenuItem value="">Select brand</MenuItem>
+          <InputLabel>{t("assetForm.brand")}</InputLabel>
+          <Select value={form.marca_id} label={t("assetForm.brand")} onChange={handleChange("marca_id")}>
+            <MenuItem value="">{t("assetForm.selectBrand")}</MenuItem>
             {marcas.map((m) => (
               <MenuItem key={m.id} value={String(m.id)}>
                 {m.nombre}
@@ -213,10 +212,10 @@ const AssetFormPage: React.FC = () => {
             </Typography>
           )}
         </FormControl>
-        <TextField label="Model" value={form.modelo} onChange={handleChange("modelo")} />
-        <TextField label="Serial" value={form.serie} onChange={handleChange("serie")} />
+        <TextField label={t("assetForm.model")} value={form.modelo} onChange={handleChange("modelo")} />
+        <TextField label={t("assetForm.serial")} value={form.serie} onChange={handleChange("serie")} />
         <TextField
-          label="Price (USD)"
+          label={t("assetForm.priceUsd")}
           type="number"
           value={form.precio}
           onChange={handleChange("precio")}
@@ -228,7 +227,7 @@ const AssetFormPage: React.FC = () => {
           }}
         />
         <TextField
-          label="Acquisition date"
+          label={t("assetForm.acqDate")}
           type="date"
           value={form.fecha_adquisicion}
           onChange={handleChange("fecha_adquisicion")}
@@ -238,9 +237,9 @@ const AssetFormPage: React.FC = () => {
           helperText={errors.fecha_adquisicion}
         />
         <FormControl>
-          <InputLabel>Supplier</InputLabel>
-          <Select value={form.proveedor_id} label="Supplier" onChange={handleChange("proveedor_id")}>
-            <MenuItem value="">None</MenuItem>
+          <InputLabel>{t("assetForm.supplier")}</InputLabel>
+          <Select value={form.proveedor_id} label={t("assetForm.supplier")} onChange={handleChange("proveedor_id")}>
+            <MenuItem value="">{t("assetForm.supplierNone")}</MenuItem>
             {proveedores.map((p) => (
               <MenuItem key={p.id} value={String(p.id)}>
                 {p.nombre}
@@ -249,17 +248,17 @@ const AssetFormPage: React.FC = () => {
           </Select>
         </FormControl>
         <FormControl required error={!!errors.estado}>
-          <InputLabel>Status</InputLabel>
-          <Select value={form.estado} label="Status" onChange={handleChange("estado")}>
-            {STATUS_OPTIONS.map((o) => (
-              <MenuItem key={o.value} value={o.value}>
-                {o.label}
+          <InputLabel>{t("assetForm.status")}</InputLabel>
+          <Select value={form.estado} label={t("assetForm.status")} onChange={handleChange("estado")}>
+            {STATUS_VALUES.map((v) => (
+              <MenuItem key={v} value={v}>
+                {t(`assetStatus.${v}`)}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
         <TextField
-          label="Notes"
+          label={t("assetForm.notes")}
           value={form.observaciones}
           onChange={handleChange("observaciones")}
           multiline
@@ -273,7 +272,7 @@ const AssetFormPage: React.FC = () => {
         {isAssigned && (
           <Box sx={{ py: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              This asset is assigned. Return it to free it for reassignment or to set status from inventory.
+              {t("assetForm.assignedHint")}
             </Typography>
             <Button
               variant="outlined"
@@ -284,16 +283,16 @@ const AssetFormPage: React.FC = () => {
                 void handleReturnAssignment();
               }}
             >
-              {returning ? "Returning…" : "Return from assignment"}
+              {returning ? t("assetForm.returning") : t("assetForm.returnBtn")}
             </Button>
           </Box>
         )}
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button type="submit" variant="contained">
-            Save
+            {t("common.save")}
           </Button>
           <Button variant="outlined" onClick={() => navigate("/assets")}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         </Box>
       </Box>

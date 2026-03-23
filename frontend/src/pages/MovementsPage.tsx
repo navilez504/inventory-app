@@ -15,7 +15,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
+
+const MOV_TYPES = ["ENTRADA", "SALIDA", "TRANSFERENCIA", "AJUSTE"] as const;
 
 interface Movimiento {
   id: number;
@@ -24,14 +27,8 @@ interface Movimiento {
   observaciones?: string;
 }
 
-const MOVEMENT_TYPE_LABELS: Record<string, string> = {
-  ENTRADA: "Entry",
-  SALIDA: "Exit",
-  TRANSFERENCIA: "Transfer",
-  AJUSTE: "Adjustment",
-};
-
 const MovementsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [movements, setMovements] = useState<Movimiento[]>([]);
   const [assets, setAssets] = useState<{ id: number; numero_inventario: string; modelo?: string }[]>([]);
   const [warehouses, setWarehouses] = useState<{ id: number; nombre: string }[]>([]);
@@ -43,6 +40,9 @@ const MovementsPage: React.FC = () => {
     observaciones: "",
   });
   const [error, setError] = useState<string | null>(null);
+
+  const movTypeLabel = (tipo: string) =>
+    t(`movements.movTypes.${tipo}`, { defaultValue: tipo });
 
   const loadMovements = () => api.get("/movements/").then((res) => setMovements(res.data));
 
@@ -61,7 +61,7 @@ const MovementsPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     if (!form.bien_id || !form.cantidad) {
-      setError("Please select an asset and enter quantity.");
+      setError(t("movements.errorQty"));
       return;
     }
     try {
@@ -78,15 +78,19 @@ const MovementsPage: React.FC = () => {
       });
       setForm({ tipo: "ENTRADA", bien_id: "", cantidad: "", bodega_destino_id: "", observaciones: "" });
       loadMovements();
-    } catch (err: any) {
-      setError(String(err?.response?.data?.detail ?? "Error creating movement."));
+    } catch (err: unknown) {
+      const detail =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: unknown } } }).response?.data?.detail
+          : undefined;
+      setError(typeof detail === "string" ? detail : t("movements.errorCreate"));
     }
   };
 
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
-        Movements
+        {t("movements.title")}
       </Typography>
       <Box
         component="form"
@@ -94,18 +98,19 @@ const MovementsPage: React.FC = () => {
         sx={{ display: "grid", gap: 2, mb: 3, maxWidth: 420 }}
       >
         <FormControl>
-          <InputLabel>Type</InputLabel>
-          <Select value={form.tipo} label="Type" onChange={handleChange("tipo")}>
-            <MenuItem value="ENTRADA">{MOVEMENT_TYPE_LABELS.ENTRADA}</MenuItem>
-            <MenuItem value="SALIDA">{MOVEMENT_TYPE_LABELS.SALIDA}</MenuItem>
-            <MenuItem value="TRANSFERENCIA">{MOVEMENT_TYPE_LABELS.TRANSFERENCIA}</MenuItem>
-            <MenuItem value="AJUSTE">{MOVEMENT_TYPE_LABELS.AJUSTE}</MenuItem>
+          <InputLabel>{t("movements.type")}</InputLabel>
+          <Select value={form.tipo} label={t("movements.type")} onChange={handleChange("tipo")}>
+            {MOV_TYPES.map((tipo) => (
+              <MenuItem key={tipo} value={tipo}>
+                {movTypeLabel(tipo)}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         <FormControl required>
-          <InputLabel>Asset</InputLabel>
-          <Select value={form.bien_id} label="Asset" onChange={handleChange("bien_id")}>
-            <MenuItem value="">Select asset</MenuItem>
+          <InputLabel>{t("movements.asset")}</InputLabel>
+          <Select value={form.bien_id} label={t("movements.asset")} onChange={handleChange("bien_id")}>
+            <MenuItem value="">{t("movements.selectAsset")}</MenuItem>
             {assets.map((a) => (
               <MenuItem key={a.id} value={String(a.id)}>
                 {a.numero_inventario} {a.modelo ? `— ${a.modelo}` : ""}
@@ -114,7 +119,7 @@ const MovementsPage: React.FC = () => {
           </Select>
         </FormControl>
         <TextField
-          label="Quantity"
+          label={t("movements.qty")}
           type="number"
           value={form.cantidad}
           onChange={handleChange("cantidad")}
@@ -122,13 +127,13 @@ const MovementsPage: React.FC = () => {
           inputProps={{ min: 1 }}
         />
         <FormControl>
-          <InputLabel>Destination warehouse</InputLabel>
+          <InputLabel>{t("movements.destWarehouse")}</InputLabel>
           <Select
             value={form.bodega_destino_id}
-            label="Destination warehouse"
+            label={t("movements.destWarehouse")}
             onChange={handleChange("bodega_destino_id")}
           >
-            <MenuItem value="">Select warehouse</MenuItem>
+            <MenuItem value="">{t("movements.selectWarehouse")}</MenuItem>
             {warehouses.map((w) => (
               <MenuItem key={w.id} value={String(w.id)}>
                 {w.nombre}
@@ -137,7 +142,7 @@ const MovementsPage: React.FC = () => {
           </Select>
         </FormControl>
         <TextField
-          label="Notes"
+          label={t("common.notes")}
           value={form.observaciones}
           onChange={handleChange("observaciones")}
           multiline
@@ -149,25 +154,25 @@ const MovementsPage: React.FC = () => {
           </Typography>
         )}
         <Button type="submit" variant="contained">
-          Create movement
+          {t("movements.createMovement")}
         </Button>
       </Box>
       <Typography variant="h6" gutterBottom>
-        Recent movements
+        {t("movements.recent")}
       </Typography>
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Date</TableCell>
-            <TableCell>Type</TableCell>
-            <TableCell>Notes</TableCell>
+            <TableCell>{t("movements.date")}</TableCell>
+            <TableCell>{t("movements.type")}</TableCell>
+            <TableCell>{t("movements.colNotes")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {movements.map((m) => (
             <TableRow key={m.id}>
               <TableCell>{new Date(m.fecha).toLocaleString()}</TableCell>
-              <TableCell>{MOVEMENT_TYPE_LABELS[m.tipo] ?? m.tipo}</TableCell>
+              <TableCell>{movTypeLabel(m.tipo)}</TableCell>
               <TableCell>{m.observaciones ?? "—"}</TableCell>
             </TableRow>
           ))}

@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface Categoria {
@@ -31,6 +32,7 @@ interface Proveedor {
 }
 
 const MasterDataPage: React.FC = () => {
+  const { t } = useTranslation();
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
@@ -82,21 +84,21 @@ const MasterDataPage: React.FC = () => {
   return (
     <Grid container spacing={2}>
       <Grid item xs={12}>
-        <Typography variant="h5">Master Data Maintenance</Typography>
+        <Typography variant="h5">{t("masterData.title")}</Typography>
       </Grid>
 
       <Grid item xs={12} md={4}>
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Typography variant="h6">Categories</Typography>
+          <Typography variant="h6">{t("masterData.categories")}</Typography>
           <Box component="form" onSubmit={handleCreateCategoria} sx={{ mt: 1, display: "flex", gap: 1 }}>
             <TextField
-              label="New Category"
+              label={t("masterData.newCategory")}
               value={newCategoria}
               onChange={(e) => setNewCategoria(e.target.value)}
               size="small"
             />
             <Button type="submit" variant="contained">
-              Add
+              {t("masterData.add")}
             </Button>
           </Box>
         </Paper>
@@ -104,8 +106,8 @@ const MasterDataPage: React.FC = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
+                <TableCell>{t("masterData.colId")}</TableCell>
+                <TableCell>{t("masterData.colName")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -122,16 +124,16 @@ const MasterDataPage: React.FC = () => {
 
       <Grid item xs={12} md={4}>
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Typography variant="h6">Brands</Typography>
+          <Typography variant="h6">{t("masterData.brands")}</Typography>
           <Box component="form" onSubmit={handleCreateMarca} sx={{ mt: 1, display: "flex", gap: 1 }}>
             <TextField
-              label="New Brand"
+              label={t("masterData.newBrand")}
               value={newMarca}
               onChange={(e) => setNewMarca(e.target.value)}
               size="small"
             />
             <Button type="submit" variant="contained">
-              Add
+              {t("masterData.add")}
             </Button>
           </Box>
         </Paper>
@@ -139,8 +141,8 @@ const MasterDataPage: React.FC = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
+                <TableCell>{t("masterData.colId")}</TableCell>
+                <TableCell>{t("masterData.colName")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -157,10 +159,10 @@ const MasterDataPage: React.FC = () => {
 
       <Grid item xs={12} md={4}>
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Typography variant="h6">Suppliers</Typography>
+          <Typography variant="h6">{t("masterData.suppliers")}</Typography>
           <Box component="form" onSubmit={handleCreateProveedor} sx={{ mt: 1, display: "grid", gap: 1 }}>
             <TextField
-              label="Name"
+              label={t("common.name")}
               value={newProveedor.nombre}
               onChange={(e) =>
                 setNewProveedor((prev) => ({ ...prev, nombre: e.target.value }))
@@ -168,7 +170,7 @@ const MasterDataPage: React.FC = () => {
               size="small"
             />
             <TextField
-              label="Contact"
+              label={t("masterData.contact")}
               value={newProveedor.contacto}
               onChange={(e) =>
                 setNewProveedor((prev) => ({ ...prev, contacto: e.target.value }))
@@ -176,7 +178,7 @@ const MasterDataPage: React.FC = () => {
               size="small"
             />
             <Button type="submit" variant="contained">
-              Add
+              {t("masterData.addSupplier")}
             </Button>
           </Box>
         </Paper>
@@ -184,9 +186,9 @@ const MasterDataPage: React.FC = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Contact</TableCell>
+                <TableCell>{t("masterData.colId")}</TableCell>
+                <TableCell>{t("masterData.colName")}</TableCell>
+                <TableCell>{t("masterData.colContact")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -206,4 +208,3 @@ const MasterDataPage: React.FC = () => {
 };
 
 export default MasterDataPage;
-

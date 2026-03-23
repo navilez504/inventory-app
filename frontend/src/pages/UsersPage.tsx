@@ -17,6 +17,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface Role {
@@ -35,6 +36,7 @@ interface User {
 }
 
 const UsersPage: React.FC = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,7 +61,7 @@ const UsersPage: React.FC = () => {
       setUsers(usersRes.data);
       setRoles(rolesRes.data);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Failed to load users");
+      setError(err?.response?.data?.detail || t("users.loadError"));
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ const UsersPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     if (!form.username || !form.full_name || !form.email || !form.password) {
-      setError("All fields are required");
+      setError(t("users.fieldsRequired"));
       return;
     }
     try {
@@ -107,14 +109,14 @@ const UsersPage: React.FC = () => {
       });
       await loadData();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Failed to create user");
+      setError(err?.response?.data?.detail || t("users.createError"));
     }
   };
 
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
-        Users
+        {t("users.title")}
       </Typography>
       {error && (
         <Typography color="error" variant="body2" sx={{ mb: 2 }}>
@@ -127,37 +129,37 @@ const UsersPage: React.FC = () => {
         sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 4 }}
       >
         <TextField
-          label="Username"
+          label={t("users.username")}
           value={form.username}
           onChange={handleFormChange("username")}
           size="small"
         />
         <TextField
-          label="Full name"
+          label={t("users.fullName")}
           value={form.full_name}
           onChange={handleFormChange("full_name")}
           size="small"
         />
         <TextField
-          label="Email"
+          label={t("users.email")}
           value={form.email}
           onChange={handleFormChange("email")}
           size="small"
         />
         <TextField
-          label="Password"
+          label={t("users.password")}
           type="password"
           value={form.password}
           onChange={handleFormChange("password")}
           size="small"
         />
         <FormControl size="small" sx={{ minWidth: 200 }}>
-          <InputLabel>Roles</InputLabel>
+          <InputLabel>{t("users.roles")}</InputLabel>
           <Select
             multiple
             value={form.role_ids.map(String)}
             onChange={handleRolesChange}
-            input={<OutlinedInput label="Roles" />}
+            input={<OutlinedInput label={t("users.roles")} />}
             renderValue={(selected) =>
               (selected as string[])
                 .map((id) => roles.find((r) => r.id === Number(id))?.name || id)
@@ -174,7 +176,7 @@ const UsersPage: React.FC = () => {
         </FormControl>
         <Box sx={{ alignSelf: "center" }}>
           <Button type="submit" variant="contained" disabled={loading}>
-            Create user
+            {t("users.create")}
           </Button>
         </Box>
       </Box>
@@ -182,12 +184,12 @@ const UsersPage: React.FC = () => {
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Username</TableCell>
-            <TableCell>Full name</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell>Active</TableCell>
-            <TableCell>Superuser</TableCell>
-            <TableCell>Roles</TableCell>
+            <TableCell>{t("users.username")}</TableCell>
+            <TableCell>{t("users.fullName")}</TableCell>
+            <TableCell>{t("users.email")}</TableCell>
+            <TableCell>{t("users.active")}</TableCell>
+            <TableCell>{t("users.superuser")}</TableCell>
+            <TableCell>{t("users.roles")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -196,8 +198,8 @@ const UsersPage: React.FC = () => {
               <TableCell>{u.username}</TableCell>
               <TableCell>{u.full_name}</TableCell>
               <TableCell>{u.email}</TableCell>
-              <TableCell>{u.is_active ? "Yes" : "No"}</TableCell>
-              <TableCell>{u.is_superuser ? "Yes" : "No"}</TableCell>
+              <TableCell>{u.is_active ? t("users.yes") : t("users.no")}</TableCell>
+              <TableCell>{u.is_superuser ? t("users.yes") : t("users.no")}</TableCell>
               <TableCell>{u.roles.map((r) => r.name).join(", ")}</TableCell>
             </TableRow>
           ))}
@@ -208,4 +210,3 @@ const UsersPage: React.FC = () => {
 };
 
 export default UsersPage;
-

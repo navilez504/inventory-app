@@ -20,6 +20,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface AuditLog {
@@ -81,9 +82,10 @@ const actionColor = (action: string): "default" | "primary" | "secondary" | "suc
   return "default";
 };
 
-const jsonBlock = (data: Record<string, unknown> | null | undefined) => {
+function JsonBlock({ data }: { data: Record<string, unknown> | null | undefined }) {
+  const { t } = useTranslation();
   if (data == null || (typeof data === "object" && Object.keys(data).length === 0)) {
-    return <Typography color="text.secondary">(empty)</Typography>;
+    return <Typography color="text.secondary">{t("audit.emptyJson")}</Typography>;
   }
   return (
     <Box
@@ -102,11 +104,12 @@ const jsonBlock = (data: Record<string, unknown> | null | undefined) => {
       {JSON.stringify(data, null, 2)}
     </Box>
   );
-};
+}
 
 const PAGE = 200;
 
 const AuditLogsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -154,9 +157,9 @@ const AuditLogsPage: React.FC = () => {
       } catch (e: unknown) {
         const err = e as { response?: { status?: number; data?: { detail?: string } } };
         if (err.response?.status === 403) {
-          setError("You don’t have permission to view audit logs (audit:view).");
+          setError(t("audit.forbidden"));
         } else {
-          setError(String(err.response?.data?.detail ?? "Failed to load audit logs."));
+          setError(String(err.response?.data?.detail ?? t("audit.loadError")));
         }
         if (reset) setLogs([]);
       } finally {
@@ -164,12 +167,12 @@ const AuditLogsPage: React.FC = () => {
         setLoadingMore(false);
       }
     },
-    [buildParams, logs.length]
+    [buildParams, logs.length, t]
   );
 
   useEffect(() => {
     void fetchLogs(true);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- initial load only
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     api
@@ -193,9 +196,9 @@ const AuditLogsPage: React.FC = () => {
       } catch (e: unknown) {
         const err = e as { response?: { status?: number; data?: { detail?: string } } };
         if (err.response?.status === 403) {
-          setError("You don’t have permission to view audit logs (audit:view).");
+          setError(t("audit.forbidden"));
         } else {
-          setError(String(err.response?.data?.detail ?? "Failed to load."));
+          setError(String(err.response?.data?.detail ?? t("audit.loadError")));
         }
         setLogs([]);
       } finally {
@@ -224,52 +227,52 @@ const AuditLogsPage: React.FC = () => {
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
-        Audit logs
+        {t("audit.title")}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Who changed what, when, and from which IP. Open <strong>View</strong> for full before/after payloads (JSON).
+        {t("audit.subtitle")}
       </Typography>
 
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mb: 2 }} flexWrap="wrap">
         <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel>Table</InputLabel>
+          <InputLabel>{t("audit.table")}</InputLabel>
           <Select
             value={filterTable}
-            label="Table"
+            label={t("audit.table")}
             onChange={(e) => setFilterTable(e.target.value)}
           >
-            <MenuItem value="">All tables</MenuItem>
-            {tables.map((t) => (
-              <MenuItem key={t} value={t}>
-                {t}
+            <MenuItem value="">{t("audit.allTables")}</MenuItem>
+            {tables.map((tbl) => (
+              <MenuItem key={tbl} value={tbl}>
+                {tbl}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
         <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel>Action</InputLabel>
+          <InputLabel>{t("audit.action")}</InputLabel>
           <Select
             value={filterAction}
-            label="Action"
+            label={t("audit.action")}
             onChange={(e) => setFilterAction(e.target.value)}
           >
-            <MenuItem value="">All actions</MenuItem>
-            {actions.map((a) => (
-              <MenuItem key={a} value={a}>
-                {a}
+            <MenuItem value="">{t("audit.allActions")}</MenuItem>
+            {actions.map((act) => (
+              <MenuItem key={act} value={act}>
+                {act}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
         <TextField
           size="small"
-          label="User ID"
+          label={t("audit.userId")}
           value={filterUserId}
           onChange={(e) => setFilterUserId(e.target.value)}
           sx={{ width: 100 }}
         />
         <Button variant="contained" onClick={applyFilters} disabled={loading}>
-          Apply filters
+          {t("common.apply")}
         </Button>
         <Button
           variant="outlined"
@@ -290,7 +293,7 @@ const AuditLogsPage: React.FC = () => {
                   setHasMore(batch.length >= PAGE);
                 } catch (e: unknown) {
                   const err = e as { response?: { data?: { detail?: string } } };
-                  setError(String(err.response?.data?.detail ?? "Failed."));
+                  setError(String(err.response?.data?.detail ?? t("audit.loadError")));
                   setLogs([]);
                 } finally {
                   setLoading(false);
@@ -300,11 +303,11 @@ const AuditLogsPage: React.FC = () => {
           }}
           disabled={loading}
         >
-          Reset
+          {t("common.reset")}
         </Button>
         <TextField
           size="small"
-          label="Search in loaded rows"
+          label={t("audit.searchRows")}
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           sx={{ minWidth: 220, flex: 1 }}
@@ -320,13 +323,13 @@ const AuditLogsPage: React.FC = () => {
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell sx={{ whiteSpace: "nowrap" }}>When (local)</TableCell>
-            <TableCell>User</TableCell>
-            <TableCell>Table</TableCell>
-            <TableCell>Action</TableCell>
-            <TableCell sx={{ minWidth: 280 }}>Summary</TableCell>
-            <TableCell>IP</TableCell>
-            <TableCell align="right">Details</TableCell>
+            <TableCell sx={{ whiteSpace: "nowrap" }}>{t("audit.when")}</TableCell>
+            <TableCell>{t("audit.user")}</TableCell>
+            <TableCell>{t("audit.table")}</TableCell>
+            <TableCell>{t("audit.action")}</TableCell>
+            <TableCell sx={{ minWidth: 280 }}>{t("audit.summary")}</TableCell>
+            <TableCell>{t("audit.ip")}</TableCell>
+            <TableCell align="right">{t("audit.details")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -357,7 +360,7 @@ const AuditLogsPage: React.FC = () => {
               </TableCell>
               <TableCell align="right">
                 <Button size="small" onClick={() => setDetail(log)}>
-                  View
+                  {t("common.view")}
                 </Button>
               </TableCell>
             </TableRow>
@@ -367,14 +370,14 @@ const AuditLogsPage: React.FC = () => {
 
       {!loading && filteredBySearch.length === 0 && !error && (
         <Typography color="text.secondary" sx={{ py: 3 }}>
-          No audit entries match your filters.
+          {t("audit.noMatch")}
         </Typography>
       )}
 
       {hasMore && logs.length > 0 && (
         <Box sx={{ mt: 2, textAlign: "center" }}>
           <Button onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? "Loading…" : "Load more"}
+            {loadingMore ? t("common.loading") : t("common.loadMore")}
           </Button>
         </Box>
       )}
@@ -383,19 +386,23 @@ const AuditLogsPage: React.FC = () => {
         {detail && (
           <>
             <DialogTitle>
-              Audit #{detail.id} — {detail.action} on {detail.table_name}
+              {t("audit.dialogTitle", {
+                id: detail.id,
+                action: detail.action,
+                table: detail.table_name,
+              })}
             </DialogTitle>
             <DialogContent dividers>
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    When
+                    {t("audit.when")}
                   </Typography>
                   <Typography>{new Date(detail.timestamp).toLocaleString()}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Actor
+                    {t("audit.actor")}
                   </Typography>
                   <Typography>
                     {detail.full_name} (@{detail.username}) · user id {detail.user_id}
@@ -403,27 +410,27 @@ const AuditLogsPage: React.FC = () => {
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Client IP
+                    {t("audit.clientIp")}
                   </Typography>
                   <Typography fontFamily="monospace">{detail.ip_address ?? "—"}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Summary
+                    {t("audit.summary")}
                   </Typography>
                   <Typography>{detail.summary}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" gutterBottom>
-                    Before (old_data)
+                    {t("audit.before")}
                   </Typography>
-                  {jsonBlock(detail.old_data)}
+                  <JsonBlock data={detail.old_data} />
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" gutterBottom>
-                    After (new_data)
+                    {t("audit.after")}
                   </Typography>
-                  {jsonBlock(detail.new_data)}
+                  <JsonBlock data={detail.new_data} />
                 </Box>
               </Stack>
             </DialogContent>

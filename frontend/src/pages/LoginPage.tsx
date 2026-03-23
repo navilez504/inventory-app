@@ -8,7 +8,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../services/AuthContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -17,6 +19,7 @@ const LoginPage: React.FC = () => {
   const [info, setInfo] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,41 +28,41 @@ const LoginPage: React.FC = () => {
       setInfo(null);
       const { replacedPreviousSession } = await login(username, password);
       if (replacedPreviousSession) {
-        setInfo(
-          "Your previous session was closed and a new one has been started on this device."
-        );
+        setInfo(t("login.sessionReplaced"));
       }
       navigate("/");
     } catch (err: any) {
-      const status = err?.response?.status;
       const detail = err?.response?.data?.detail;
       if (typeof detail === "string") {
         setError(detail);
       } else {
-        setError("Invalid credentials");
+        setError(t("login.invalidCredentials"));
       }
     }
   };
 
   return (
     <Container maxWidth="xs">
-      <Box mt={8}>
+      <Box mt={4} display="flex" justifyContent="flex-end" mb={1}>
+        <LanguageSwitcher />
+      </Box>
+      <Box mt={2}>
         <Paper sx={{ p: 4 }}>
           <Typography variant="h5" mb={2}>
-            Inventory Login
+            {t("login.title")}
           </Typography>
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
               margin="normal"
-              label="Username"
+              label={t("login.username")}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
             <TextField
               fullWidth
               margin="normal"
-              label="Password"
+              label={t("login.password")}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -81,7 +84,7 @@ const LoginPage: React.FC = () => {
               fullWidth
               sx={{ mt: 2 }}
             >
-              Login
+              {t("login.submit")}
             </Button>
           </form>
         </Paper>
@@ -91,4 +94,3 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
-

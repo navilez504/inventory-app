@@ -10,6 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface Asset {
@@ -25,10 +26,12 @@ interface Asset {
 const ASSIGNED_STATUSES = new Set(["ASSIGNED", "ASIGNADO"]);
 
 const AssetsListPage: React.FC = () => {
+  const { t } = useTranslation();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [categorias, setCategorias] = useState<Record<number, string>>({});
   const [marcas, setMarcas] = useState<Record<number, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
+  const [msgIsError, setMsgIsError] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -54,22 +57,24 @@ const AssetsListPage: React.FC = () => {
   const handleReturn = async (e: React.MouseEvent, assetId: number) => {
     e.stopPropagation();
     setMsg(null);
+    setMsgIsError(false);
     try {
       await api.post(`/assignments/return/${assetId}`);
-      setMsg("Asset returned from assignment.");
+      setMsg(t("assets.returned"));
       await loadAssets();
     } catch (err: any) {
-      setMsg(String(err?.response?.data?.detail ?? "Return failed."));
+      setMsg(String(err?.response?.data?.detail ?? t("assets.returnFailed")));
+      setMsgIsError(true);
     }
   };
 
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
-        Assets
+        {t("assets.title")}
       </Typography>
       {msg && (
-        <Typography variant="body2" color={msg.includes("failed") ? "error" : "success.main"} sx={{ mb: 1 }}>
+        <Typography variant="body2" color={msgIsError ? "error" : "success.main"} sx={{ mb: 1 }}>
           {msg}
         </Typography>
       )}
@@ -79,18 +84,18 @@ const AssetsListPage: React.FC = () => {
         onClick={() => navigate("/assets/new")}
         sx={{ mb: 2 }}
       >
-        New asset
+        {t("assets.newAsset")}
       </Button>
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Inventory #</TableCell>
-            <TableCell>Category</TableCell>
-            <TableCell>Brand</TableCell>
-            <TableCell>Model</TableCell>
-            <TableCell>Serial</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell align="right">Actions</TableCell>
+            <TableCell>{t("assets.inventoryNumber")}</TableCell>
+            <TableCell>{t("assets.category")}</TableCell>
+            <TableCell>{t("assets.brand")}</TableCell>
+            <TableCell>{t("assets.model")}</TableCell>
+            <TableCell>{t("assets.serial")}</TableCell>
+            <TableCell>{t("assets.status")}</TableCell>
+            <TableCell align="right">{t("common.actions")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -110,7 +115,7 @@ const AssetsListPage: React.FC = () => {
               <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                 {a.estado && ASSIGNED_STATUSES.has(String(a.estado).toUpperCase()) ? (
                   <Button size="small" color="warning" variant="outlined" onClick={(e) => handleReturn(e, a.id)}>
-                    Return
+                    {t("common.return")}
                   </Button>
                 ) : (
                   "—"

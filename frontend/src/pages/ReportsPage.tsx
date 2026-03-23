@@ -9,8 +9,12 @@ import {
   TableRow,
   TextField,
   Typography,
+  Alert,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
+import InventoryAnalytics from "../components/erp/InventoryAnalytics";
+import type { DashboardKPIs } from "../types/dashboard";
 
 interface InventoryByWarehouse {
   bodega_id: number;
@@ -34,6 +38,11 @@ interface MovementRow {
 }
 
 const ReportsPage: React.FC = () => {
+  const { t } = useTranslation();
+  const [kpis, setKpis] = useState<DashboardKPIs | null>(null);
+  const [kpiLoading, setKpiLoading] = useState(true);
+  const [kpiError, setKpiError] = useState<string | null>(null);
+
   const [byWarehouse, setByWarehouse] = useState<InventoryByWarehouse[]>([]);
   const [byPerson, setByPerson] = useState<InventoryByPerson[]>([]);
   const [assetId, setAssetId] = useState("");
@@ -44,6 +53,29 @@ const ReportsPage: React.FC = () => {
     api.get("/reports/inventory-by-person").then((res) => setByPerson(res.data));
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    setKpiLoading(true);
+    setKpiError(null);
+    api
+      .get<DashboardKPIs>("/reports/dashboard-kpis")
+      .then((res) => {
+        if (!cancelled) setKpis(res.data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setKpiError(String(err?.response?.data?.detail ?? err?.message ?? t("reports.kpiError")));
+          setKpis(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setKpiLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
+
   const loadMovementHistory = async () => {
     if (!assetId.trim()) return;
     const res = await api.get(`/reports/asset-movements/${assetId}`);
@@ -52,17 +84,26 @@ const ReportsPage: React.FC = () => {
 
   return (
     <Box sx={{ display: "grid", gap: 3 }}>
-      <Typography variant="h5">Reports</Typography>
+      <Typography variant="h5" fontWeight={700}>
+        {t("reports.title")}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {t("reports.subtitle")}
+      </Typography>
+
+      {kpiError && <Alert severity="warning">{kpiError}</Alert>}
+
+      <InventoryAnalytics data={kpis} loading={kpiLoading} title={t("reports.execTitle")} dense />
 
       <Paper sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
-          Inventory by Warehouse
+          {t("reports.byWarehouse")}
         </Typography>
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Warehouse</TableCell>
-              <TableCell align="right">Total Quantity</TableCell>
+              <TableCell>{t("reports.warehouse")}</TableCell>
+              <TableCell align="right">{t("reports.totalQty")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -78,13 +119,16 @@ const ReportsPage: React.FC = () => {
 
       <Paper sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
-          Inventory by Person
+          {t("reports.byPerson")}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+          {t("reports.byPersonHint")}
         </Typography>
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Person</TableCell>
-              <TableCell align="right">Assigned Assets</TableCell>
+              <TableCell>{t("reports.person")}</TableCell>
+              <TableCell align="right">{t("reports.assignedAssets")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -102,11 +146,11 @@ const ReportsPage: React.FC = () => {
 
       <Paper sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>
-          Asset Movement History
+          {t("reports.movHistory")}
         </Typography>
         <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
           <TextField
-            label="Asset ID"
+            label={t("reports.assetId")}
             size="small"
             value={assetId}
             onChange={(e) => setAssetId(e.target.value)}
@@ -116,11 +160,11 @@ const ReportsPage: React.FC = () => {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Quantity</TableCell>
-              <TableCell>Notes</TableCell>
+              <TableCell>{t("reports.movId")}</TableCell>
+              <TableCell>{t("reports.type")}</TableCell>
+              <TableCell>{t("reports.date")}</TableCell>
+              <TableCell>{t("reports.quantity")}</TableCell>
+              <TableCell>{t("common.notes")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -141,4 +185,3 @@ const ReportsPage: React.FC = () => {
 };
 
 export default ReportsPage;
-

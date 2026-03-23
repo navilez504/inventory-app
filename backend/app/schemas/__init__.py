@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from pydantic import BaseModel, EmailStr
 
@@ -349,4 +349,27 @@ class StockWithDetails(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class NameCount(BaseModel):
+    """Label + numeric value for charts."""
+
+    name: str
+    value: float
+
+
+class DashboardKPIs(BaseModel):
+    total_assets: int
+    total_book_value_usd: float
+    total_stock_units: int
+    warehouses_count: int
+    personas_count: int
+    active_assignments: int
+    movements_total: int
+    movements_last_30_days: int
+    assets_by_status: Dict[str, int]
+    top_categories: List[NameCount]
+    stock_by_warehouse: List[NameCount]
+    movements_by_type: Dict[str, int]
+    movements_by_month: List[NameCount]
 

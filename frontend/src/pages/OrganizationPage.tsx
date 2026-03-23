@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface Gerencia {
@@ -34,6 +35,7 @@ interface Persona {
 }
 
 const OrganizationPage: React.FC = () => {
+  const { t } = useTranslation();
   const [gerencias, setGerencias] = useState<Gerencia[]>([]);
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -104,21 +106,21 @@ const OrganizationPage: React.FC = () => {
   return (
     <Grid container spacing={2}>
       <Grid item xs={12}>
-        <Typography variant="h5">Organization</Typography>
+        <Typography variant="h5">{t("organization.title")}</Typography>
       </Grid>
 
       <Grid item xs={12} md={4}>
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Typography variant="h6">Gerencias</Typography>
+          <Typography variant="h6">{t("organization.gerencias")}</Typography>
           <Box component="form" onSubmit={handleCreateGerencia} sx={{ mt: 1, display: "flex", gap: 1 }}>
             <TextField
-              label="New Gerencia"
+              label={t("organization.newGerencia")}
               size="small"
               value={newGerencia}
               onChange={(e) => setNewGerencia(e.target.value)}
             />
             <Button type="submit" variant="contained">
-              Add
+              {t("organization.addGerencia")}
             </Button>
           </Box>
         </Paper>
@@ -126,8 +128,8 @@ const OrganizationPage: React.FC = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
+                <TableCell>{t("organization.colId")}</TableCell>
+                <TableCell>{t("organization.colName")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -144,10 +146,10 @@ const OrganizationPage: React.FC = () => {
 
       <Grid item xs={12} md={4}>
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Typography variant="h6">Unidades</Typography>
+          <Typography variant="h6">{t("organization.unidades")}</Typography>
           <Box component="form" onSubmit={handleCreateUnidad} sx={{ mt: 1, display: "grid", gap: 1 }}>
             <TextField
-              label="Name"
+              label={t("common.name")}
               size="small"
               value={newUnidad.nombre}
               onChange={(e) =>
@@ -155,7 +157,7 @@ const OrganizationPage: React.FC = () => {
               }
             />
             <TextField
-              label="Gerencia ID"
+              label={t("organization.gerenciaId")}
               size="small"
               value={newUnidad.gerencia_id}
               onChange={(e) =>
@@ -163,7 +165,7 @@ const OrganizationPage: React.FC = () => {
               }
             />
             <Button type="submit" variant="contained">
-              Add
+              {t("organization.addUnidad")}
             </Button>
           </Box>
         </Paper>
@@ -171,9 +173,9 @@ const OrganizationPage: React.FC = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Gerencia ID</TableCell>
+                <TableCell>{t("organization.colId")}</TableCell>
+                <TableCell>{t("organization.colName")}</TableCell>
+                <TableCell>{t("organization.gerenciaId")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -191,10 +193,10 @@ const OrganizationPage: React.FC = () => {
 
       <Grid item xs={12} md={4}>
         <Paper sx={{ p: 2, mb: 2 }}>
-          <Typography variant="h6">Personas</Typography>
+          <Typography variant="h6">{t("organization.personas")}</Typography>
           <Box component="form" onSubmit={handleCreatePersona} sx={{ mt: 1, display: "grid", gap: 1 }}>
             <TextField
-              label="First Names"
+              label={t("organization.firstNames")}
               size="small"
               value={newPersona.nombres}
               onChange={(e) =>
@@ -202,7 +204,7 @@ const OrganizationPage: React.FC = () => {
               }
             />
             <TextField
-              label="Last Names"
+              label={t("organization.lastNames")}
               size="small"
               value={newPersona.apellidos}
               onChange={(e) =>
@@ -210,7 +212,7 @@ const OrganizationPage: React.FC = () => {
               }
             />
             <TextField
-              label="Identification"
+              label={t("organization.identification")}
               size="small"
               value={newPersona.identificacion}
               onChange={(e) =>
@@ -221,7 +223,7 @@ const OrganizationPage: React.FC = () => {
               }
             />
             <TextField
-              label="Unidad ID"
+              label={t("organization.unidadId")}
               size="small"
               value={newPersona.unidad_id}
               onChange={(e) =>
@@ -229,7 +231,7 @@ const OrganizationPage: React.FC = () => {
               }
             />
             <Button type="submit" variant="contained">
-              Add
+              {t("organization.addPersona")}
             </Button>
           </Box>
         </Paper>
@@ -237,10 +239,10 @@ const OrganizationPage: React.FC = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Identification</TableCell>
-                <TableCell>Unidad ID</TableCell>
+                <TableCell>{t("organization.colId")}</TableCell>
+                <TableCell>{t("organization.personName")}</TableCell>
+                <TableCell>{t("organization.identification")}</TableCell>
+                <TableCell>{t("organization.unidadId")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -263,4 +265,3 @@ const OrganizationPage: React.FC = () => {
 };
 
 export default OrganizationPage;
-

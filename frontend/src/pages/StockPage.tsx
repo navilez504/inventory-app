@@ -12,6 +12,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface StockRow {
@@ -26,6 +27,7 @@ interface StockRow {
 }
 
 const StockPage: React.FC = () => {
+  const { t } = useTranslation();
   const [stock, setStock] = useState<StockRow[]>([]);
   const [warehouses, setWarehouses] = useState<{ id: number; nombre: string }[]>([]);
   const [filterBodegaId, setFilterBodegaId] = useState<string>("");
@@ -45,16 +47,16 @@ const StockPage: React.FC = () => {
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
-        Stock management
+        {t("stock.title")}
       </Typography>
       <FormControl sx={{ minWidth: 260, mb: 2 }}>
-        <InputLabel>Filter by warehouse</InputLabel>
+        <InputLabel>{t("stock.filterWarehouse")}</InputLabel>
         <Select
           value={filterBodegaId}
-          label="Filter by warehouse"
+          label={t("stock.filterWarehouse")}
           onChange={(e) => setFilterBodegaId(e.target.value as string)}
         >
-          <MenuItem value="">All warehouses</MenuItem>
+          <MenuItem value="">{t("stock.allWarehouses")}</MenuItem>
           {warehouses.map((w) => (
             <MenuItem key={w.id} value={String(w.id)}>
               {w.nombre}
@@ -65,18 +67,18 @@ const StockPage: React.FC = () => {
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Warehouse</TableCell>
-            <TableCell>Location</TableCell>
-            <TableCell>Asset</TableCell>
-            <TableCell>Model</TableCell>
-            <TableCell align="right">Quantity</TableCell>
+            <TableCell>{t("stock.colWarehouse")}</TableCell>
+            <TableCell>{t("stock.colLocation")}</TableCell>
+            <TableCell>{t("stock.colAsset")}</TableCell>
+            <TableCell>{t("stock.colModel")}</TableCell>
+            <TableCell align="right">{t("stock.colQty")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {filteredStock.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                No stock records. Create a movement (e.g. Entry) to add stock to a warehouse.
+                {t("stock.emptyHint")}
               </TableCell>
             </TableRow>
           ) : (

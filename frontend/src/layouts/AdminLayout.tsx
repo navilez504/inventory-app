@@ -16,23 +16,25 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Link as RouterLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../services/AuthContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 
 const drawerWidth = 240;
 
-const menuItems = [
-  { label: "Dashboard", to: "/" },
-  { label: "Assets", to: "/assets" },
-  { label: "Warehouses", to: "/warehouses" },
-  { label: "Stock", to: "/stock" },
-  { label: "Organization", to: "/organization" },
-  { label: "Master Data", to: "/master-data" },
-  { label: "Assignments", to: "/assignments" },
-  { label: "Movements", to: "/movements" },
-  { label: "Reports", to: "/reports" },
-  { label: "Audit Logs", to: "/audit" },
-  { label: "Users", to: "/users" },
-  { label: "Roles", to: "/roles" },
+const menuItems: { key: string; to: string }[] = [
+  { key: "nav.dashboard", to: "/" },
+  { key: "nav.assets", to: "/assets" },
+  { key: "nav.warehouses", to: "/warehouses" },
+  { key: "nav.stock", to: "/stock" },
+  { key: "nav.organization", to: "/organization" },
+  { key: "nav.masterData", to: "/master-data" },
+  { key: "nav.assignments", to: "/assignments" },
+  { key: "nav.movements", to: "/movements" },
+  { key: "nav.reports", to: "/reports" },
+  { key: "nav.audit", to: "/audit" },
+  { key: "nav.users", to: "/users" },
+  { key: "nav.roles", to: "/roles" },
 ];
 
 const AdminLayout: React.FC = () => {
@@ -40,6 +42,7 @@ const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -49,7 +52,7 @@ const AdminLayout: React.FC = () => {
     <div>
       <Toolbar>
         <Typography variant="h6" noWrap component="div">
-          Inventory Admin
+          {t("layout.sidebarTitle")}
         </Typography>
       </Toolbar>
       <List>
@@ -58,9 +61,13 @@ const AdminLayout: React.FC = () => {
             <ListItemButton
               component={RouterLink}
               to={item.to}
-              selected={location.pathname === item.to}
+              selected={
+                item.to === "/"
+                  ? location.pathname === "/"
+                  : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
+              }
             >
-              <ListItemText primary={item.label} />
+              <ListItemText primary={t(item.key)} />
             </ListItemButton>
           </ListItem>
         ))}
@@ -83,10 +90,11 @@ const AdminLayout: React.FC = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Inventory Management
+            {t("layout.appTitle")}
           </Typography>
+          <LanguageSwitcher compact />
           {user && (
-            <Typography variant="body2" sx={{ mr: 2 }}>
+            <Typography variant="body2" sx={{ mr: 2, ml: 1 }}>
               {user.username}
             </Typography>
           )}
@@ -97,7 +105,7 @@ const AdminLayout: React.FC = () => {
               navigate("/login");
             }}
           >
-            Logout
+            {t("layout.logout")}
           </Button>
         </Toolbar>
       </AppBar>
@@ -147,4 +155,3 @@ const AdminLayout: React.FC = () => {
 };
 
 export default AdminLayout;
-

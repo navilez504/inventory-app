@@ -21,6 +21,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface Permission {
@@ -37,6 +38,7 @@ interface Role {
 }
 
 const RolesPage: React.FC = () => {
+  const { t } = useTranslation();
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(false);
@@ -62,7 +64,7 @@ const RolesPage: React.FC = () => {
       setRoles(rolesRes.data);
       setPermissions(permsRes.data);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Failed to load roles");
+      setError(err?.response?.data?.detail || t("roles.loadError"));
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,7 @@ const RolesPage: React.FC = () => {
   const handleSave = async () => {
     setError(null);
     if (!form.name.trim()) {
-      setError("Name is required");
+      setError(t("roles.nameRequired"));
       return;
     }
     try {
@@ -125,7 +127,7 @@ const RolesPage: React.FC = () => {
       setDialogOpen(false);
       await loadData();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Failed to save role");
+      setError(err?.response?.data?.detail || t("roles.saveError"));
     }
   };
 
@@ -136,20 +138,20 @@ const RolesPage: React.FC = () => {
       setDeleteConfirmId(null);
       await loadData();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Failed to delete role");
+      setError(err?.response?.data?.detail || t("roles.deleteError"));
     }
   };
 
   return (
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="h5">Roles &amp; Activities</Typography>
+        <Typography variant="h5">{t("roles.title")}</Typography>
         <Button variant="contained" onClick={openCreate} disabled={loading}>
-          Add role
+          {t("roles.addRole")}
         </Button>
       </Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        A user can have one or more roles. Each role defines which activities (permissions) the user can perform in the system.
+        {t("roles.subtitle")}
       </Typography>
       {error && (
         <Typography color="error" variant="body2" sx={{ mb: 2 }}>
@@ -160,10 +162,10 @@ const RolesPage: React.FC = () => {
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Description</TableCell>
-            <TableCell>Activities (permissions)</TableCell>
-            <TableCell align="right">Actions</TableCell>
+            <TableCell>{t("roles.colName")}</TableCell>
+            <TableCell>{t("roles.colDesc")}</TableCell>
+            <TableCell>{t("roles.colPerm")}</TableCell>
+            <TableCell align="right">{t("common.actions")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -178,14 +180,14 @@ const RolesPage: React.FC = () => {
               </TableCell>
               <TableCell align="right">
                 <Button size="small" onClick={() => openEdit(r)}>
-                  Edit
+                  {t("roles.edit")}
                 </Button>
                 <Button
                   size="small"
                   color="error"
                   onClick={() => setDeleteConfirmId(r.id)}
                 >
-                  Delete
+                  {t("roles.delete")}
                 </Button>
               </TableCell>
             </TableRow>
@@ -194,31 +196,31 @@ const RolesPage: React.FC = () => {
       </Table>
 
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingId !== null ? "Edit role" : "New role"}</DialogTitle>
+        <DialogTitle>{editingId !== null ? t("roles.editRole") : t("roles.newRole")}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            label="Name"
+            label={t("roles.name")}
             fullWidth
             value={form.name}
             onChange={handleFormChange("name")}
           />
           <TextField
             margin="dense"
-            label="Description"
+            label={t("roles.desc")}
             fullWidth
             multiline
             value={form.description}
             onChange={handleFormChange("description")}
           />
           <FormControl fullWidth margin="dense">
-            <InputLabel>Activities (permissions)</InputLabel>
+            <InputLabel>{t("roles.permissions")}</InputLabel>
             <Select
               multiple
               value={form.permission_ids.map(String)}
               onChange={handlePermissionsChange}
-              input={<OutlinedInput label="Activities (permissions)" />}
+              input={<OutlinedInput label={t("roles.permissions")} />}
               renderValue={(selected) =>
                 (selected as string[])
                   .map((id) => permissions.find((p) => p.id === Number(id))?.code || id)
@@ -238,26 +240,24 @@ const RolesPage: React.FC = () => {
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
           <Button onClick={handleSave} variant="contained">
-            {editingId !== null ? "Update" : "Create"}
+            {editingId !== null ? t("roles.update") : t("roles.create")}
           </Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={deleteConfirmId !== null} onClose={() => setDeleteConfirmId(null)}>
-        <DialogTitle>Delete role?</DialogTitle>
-        <DialogContent>
-          This will remove the role. You cannot delete a role that is assigned to users.
-        </DialogContent>
+        <DialogTitle>{t("roles.confirmDelete")}</DialogTitle>
+        <DialogContent>{t("roles.deleteBody")}</DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
+          <Button onClick={() => setDeleteConfirmId(null)}>{t("common.cancel")}</Button>
           <Button
             color="error"
             variant="contained"
             onClick={() => deleteConfirmId !== null && handleDelete(deleteConfirmId)}
           >
-            Delete
+            {t("roles.delete")}
           </Button>
         </DialogActions>
       </Dialog>

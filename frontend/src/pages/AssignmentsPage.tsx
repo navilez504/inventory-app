@@ -16,6 +16,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 
 interface Assignment {
@@ -35,6 +36,7 @@ interface Asset {
 }
 
 const AssignmentsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignableAssets, setAssignableAssets] = useState<Asset[]>([]);
   const [personas, setPersonas] = useState<{ id: number; nombres: string; apellidos: string }[]>([]);
@@ -61,7 +63,7 @@ const AssignmentsPage: React.FC = () => {
     if (submitting) return;
     setError(null);
     if (!form.bien_id || !form.persona_id) {
-      setError("Please select an asset and a person.");
+      setError(t("assignments.selectBoth"));
       return;
     }
     setSubmitting(true);
@@ -76,7 +78,7 @@ const AssignmentsPage: React.FC = () => {
       const res = await api.get<Asset[]>("/assets/", { params: { assignable_only: true } });
       setAssignableAssets(res.data);
     } catch (err: any) {
-      setError(String(err?.response?.data?.detail ?? "Error creating assignment."));
+      setError(String(err?.response?.data?.detail ?? t("assignments.createError")));
     } finally {
       setSubmitting(false);
     }
@@ -85,16 +87,13 @@ const AssignmentsPage: React.FC = () => {
   const handleReturn = async (bienId: number) => {
     setError(null);
     try {
-      const res = await api.post(`/assignments/return/${bienId}`);
-      if (res.data?.synced) {
-        setError(null);
-      }
+      await api.post(`/assignments/return/${bienId}`);
       await loadAssignments();
       const assetsRes = await api.get<Asset[]>("/assets/", { params: { assignable_only: true } });
       setAssignableAssets(assetsRes.data);
     } catch (err: any) {
       const d = err?.response?.data?.detail;
-      setError(typeof d === "string" ? d : Array.isArray(d) ? JSON.stringify(d) : "Return failed.");
+      setError(typeof d === "string" ? d : Array.isArray(d) ? JSON.stringify(d) : t("assignments.returnFailed"));
     }
   };
 
@@ -115,17 +114,16 @@ const AssignmentsPage: React.FC = () => {
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
-        Assignments
+        {t("assignments.title")}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Use <strong>Return</strong> below to unassign an asset (or use Return on the asset list / edit page). Only assets
-        with warehouse stock and status Available or In warehouse appear in the assign dropdown.
+        {t("assignments.hint")}
       </Typography>
       <Box component="form" onSubmit={handleSubmit} sx={{ display: "grid", gap: 2, mb: 3, maxWidth: 420 }}>
         <FormControl required>
-          <InputLabel>Asset (assignable)</InputLabel>
-          <Select value={form.bien_id} label="Asset (assignable)" onChange={handleChange("bien_id")}>
-            <MenuItem value="">Select asset</MenuItem>
+          <InputLabel>{t("assignments.assetAssignable")}</InputLabel>
+          <Select value={form.bien_id} label={t("assignments.assetAssignable")} onChange={handleChange("bien_id")}>
+            <MenuItem value="">{t("assignments.selectAsset")}</MenuItem>
             {assignableAssets.map((a) => (
               <MenuItem key={a.id} value={String(a.id)}>
                 {a.numero_inventario} {a.modelo ? `— ${a.modelo}` : ""}{" "}
@@ -135,9 +133,9 @@ const AssignmentsPage: React.FC = () => {
           </Select>
         </FormControl>
         <FormControl required>
-          <InputLabel>Person</InputLabel>
-          <Select value={form.persona_id} label="Person" onChange={handleChange("persona_id")}>
-            <MenuItem value="">Select person</MenuItem>
+          <InputLabel>{t("assignments.person")}</InputLabel>
+          <Select value={form.persona_id} label={t("assignments.person")} onChange={handleChange("persona_id")}>
+            <MenuItem value="">{t("assignments.selectPerson")}</MenuItem>
             {personas.map((p) => (
               <MenuItem key={p.id} value={String(p.id)}>
                 {p.nombres} {p.apellidos}
@@ -146,7 +144,7 @@ const AssignmentsPage: React.FC = () => {
           </Select>
         </FormControl>
         <TextField
-          label="Notes"
+          label={t("common.notes")}
           value={form.observaciones}
           onChange={handleChange("observaciones")}
           multiline
@@ -158,20 +156,20 @@ const AssignmentsPage: React.FC = () => {
           </Typography>
         )}
         <Button type="submit" variant="contained" disabled={submitting}>
-          {submitting ? "Assigning…" : "Assign asset"}
+          {submitting ? t("assignments.assigning") : t("assignments.assignAsset")}
         </Button>
       </Box>
       <Typography variant="h6" gutterBottom>
-        Active assignments
+        {t("assignments.activeTitle")}
       </Typography>
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Asset</TableCell>
-            <TableCell>Person</TableCell>
-            <TableCell>Date</TableCell>
-            <TableCell>Notes</TableCell>
-            <TableCell align="right">Actions</TableCell>
+            <TableCell>{t("assignments.asset")}</TableCell>
+            <TableCell>{t("assignments.person")}</TableCell>
+            <TableCell>{t("assignments.date")}</TableCell>
+            <TableCell>{t("common.notes")}</TableCell>
+            <TableCell align="right">{t("common.actions")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -187,7 +185,7 @@ const AssignmentsPage: React.FC = () => {
               <TableCell>{a.observaciones ?? "—"}</TableCell>
               <TableCell align="right">
                 <Button size="small" color="warning" onClick={() => handleReturn(a.bien_id)}>
-                  Return
+                  {t("common.return")}
                 </Button>
               </TableCell>
             </TableRow>
